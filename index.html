@@ -29,30 +29,25 @@ iframe{width:100%;border:none;border-radius:4px;margin-top:25px}
 
 <div class="container">
 
-  <!-- Etiquetas configurables -->
   <label for="labels">Etiquetas a extraer (separadas por comas):</label>
   <input id="labels" type="text"
     value="Coaplicante, Aplicante Principal, Número de Seguro Social o ITIN, Fecha de nacimiento, Dirección, Banco, Ruta, Correr" />
 
-  <!-- Texto fuente -->
   <label for="inputRaw">Texto copiado desde WhatsApp:</label>
   <textarea id="inputRaw" rows="10" placeholder="Pega aquí el texto…"></textarea>
 
-  <!-- Botones -->
   <button id="btnProcess">Procesar</button>
   <button id="btnForm" disabled>Abrir formulario</button>
 
-  <!-- Resultados -->
   <div id="resultPanel"></div>
 
-  <!-- Formulario incrustado -->
   <iframe id="googleForm" height="900" src=""
           title="Formulario Google (incrustado)">Cargando…</iframe>
 
 </div>
 
 <script>
-/* ---------- Utilidades ---------- */
+/* ---------- utilidades ---------- */
 function normalize(t){
   return t.replace(/\r\n/g,"\n").replace(/\r/g,"\n")
           .replace(/\u2028|\u2029/g,"\n").replace(/\n/g,"\r\n");
@@ -81,7 +76,7 @@ const btnProcess=document.getElementById("btnProcess");
 const btnForm=document.getElementById("btnForm");
 const iframe=document.getElementById("googleForm");
 
-let ultimoResultado={}; // se llena tras procesar
+let ultimoResultado={};
 
 btnProcess.addEventListener("click",()=>{
   const raw=normalize(document.getElementById("inputRaw").value);
@@ -91,8 +86,8 @@ btnProcess.addEventListener("click",()=>{
   panel.innerHTML=""; ultimoResultado={};
 
   etiquetas.forEach(et=>{
-    const regex=new RegExp(et.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\s*:\\s*(.+?)(\\r?\\n|$|\\.)","i");
-    let val=raw.match(regex)?.[1].trim()||"—";
+    const rex=new RegExp(et.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\s*:\\s*(.+?)(\\r?\\n|$|\\.)","i");
+    let val=raw.match(rex)?.[1].trim()||"—";
     if(et.toLowerCase().includes("fecha")) val=formatearFecha(val);
     ultimoResultado[et]=val;
     addRow(et,val);
@@ -121,9 +116,24 @@ btnForm.addEventListener("click",()=>{
 /* ---------- Formateo fecha MM/DD/YY ---------- */
 function formatearFecha(str){
   if(!str) return str;
-  str=str.replace(/\b(\d{1,2})(st|nd|rd|th)\b/i,"$1")   // quita sufijos
-         .replace(/[.,]\s*$/,"");                        // quita punto/coma final
-  const formats=["MMM d yyyy","MMMM d yyyy","MMM d, yyyy","MMMM d, yyyy"];
+
+  // quita sufijos 'st','nd','rd','th' y punto/coma final
+  str=str.replace(/\b(\d{1,2})(st|nd|rd|th)\b/gi,"$1")
+         .replace(/[.,]\s*$/,"")
+         .trim();
+
+  // Si viene en formato numérico con barras
+  const num=/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/;
+  const m=str.match(num);
+  if(m){
+    let mm=m[1].padStart(2,"0"), dd=m[2].padStart(2,"0"),
+        yy=m[3].slice(-2);
+    return `${mm}/${dd}/${yy}`;
+  }
+
+  // Formatos con texto
+  const formats=["MMM d yyyy","MMMM d yyyy","MMM d, yyyy","MMMM d, yyyy",
+                 "d MMM yyyy","d MMMM yyyy","d MMM, yyyy","d MMMM, yyyy"];
   for(const f of formats){
     const d=dayjs(str,f,"en",true);
     if(d.isValid()) return d.format("MM/DD/YY");
