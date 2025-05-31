@@ -29,23 +29,18 @@ iframe{width:100%;border:none;border-radius:4px;margin-top:25px}
 
 <div class="container">
 
-  <!-- Configuración de etiquetas -->
   <label for="labels">Etiquetas a extraer (separadas por comas):</label>
   <input id="labels" type="text"
-    value="Coaplicante, Aplicante, Número de Seguro Social o ITIN, Fecha de nacimiento, Dirección, Banco, Ruta" />
+    value="Coaplicante, Aplicante, Número de Seguro Social o ITIN, Fecha de nacimiento, Dirección, Banco, Ruta, Correr" />
 
-  <!-- Texto fuente -->
   <label for="inputRaw">Texto copiado desde WhatsApp:</label>
   <textarea id="inputRaw" rows="10" placeholder="Pega aquí el texto…"></textarea>
 
-  <!-- Botones -->
   <button id="btnProcess">Procesar</button>
   <button id="btnForm" disabled>Abrir formulario</button>
 
-  <!-- Resultados -->
   <div id="resultPanel"></div>
 
-  <!-- Iframe del Google Form -->
   <iframe id="googleForm" height="900" src=""
           title="Formulario Google (incrustado)">Cargando…</iframe>
 
@@ -59,7 +54,7 @@ function normalize(t){
 }
 function copy(txt){navigator.clipboard.writeText(txt).catch(()=>alert("No se pudo copiar"));}
 
-/* ---------- mapeo etiqueta → entryID (ID reales de tu Form) ---------- */
+/* ---------- mapeo etiqueta → entryID (IDs reales) ---------- */
 const entryMap={
   "Coaplicante":                       "entry.2065841175",
   "Aplicante":                         "entry.2070971853",
@@ -68,7 +63,7 @@ const entryMap={
   "Dirección":                         "entry.1862067",
   "Banco":                             "entry.1523392839",
   "Ruta":                              "entry.738771377",
-  // Si añades más preguntas, ponlas aquí
+  "Correr":                            "entry.2075341850"
 };
 
 /* ---------- URL base del formulario (embedded + prefill) ---------- */
