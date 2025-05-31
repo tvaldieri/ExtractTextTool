@@ -1,178 +1,140 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>TextExtractor_ByTom</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    :root {
-      --blue: #3498db;
-      --blue-dark: #2980b9;
-      --header-bg: #2c3e50;
-      --bg: #f4f6f8;
-    }
-    body {
-      margin: 0;
-      font-family: "Segoe UI", sans-serif;
-      background: var(--bg);
-      color: #222;
-    }
-    /* Header */
-    header {
-      background: var(--header-bg);
-      color: #fff;
-      padding: 15px 20px;
-      font-size: 24px;
-      font-weight: 600;
-    }
-    /* Main layout */
-    .container {
-      max-width: 960px;
-      margin: auto;
-      padding: 20px;
-    }
-    label {
-      font-weight: 600;
-      display: block;
-      margin-bottom: 6px;
-    }
-    input[type="text"], textarea {
-      width: 100%;
-      font-family: Consolas, monospace;
-      font-size: 14px;
-      padding: 10px;
-      margin-bottom: 15px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      box-sizing: border-box;
-    }
-    textarea { resize: vertical; }
-    button {
-      background: var(--blue);
-      color: #fff;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 4px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    button:hover { background: var(--blue-dark); }
-    /* Result table */
-    #resultPanel {
-      margin-top: 20px;
-      background: #fff;
-      border: 1px solid #ccc;
-      padding: 10px;
-      border-radius: 4px;
-      overflow-x: auto;
-    }
-    .row {
-      display: grid;
-      grid-template-columns: 30% 55% 15%;
-      align-items: start;
-      gap: 10px;
-      padding: 6px 0;
-      border-bottom: 1px solid #eee;
-    }
-    .row:last-child { border-bottom: 0; }
-    .row label {
-      font-weight: 700;
-      margin: 0;
-    }
-    .row textarea {
-      border: none;
-      background: #fff;
-      resize: none;
-      height: auto;
-      padding: 0;
-    }
-    .copyBtn {
-      background: #e1e8f0;
-      color: #000;
-      padding: 6px 10px;
-      border-radius: 4px;
-      border: none;
-      cursor: pointer;
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>TextExtractor_ByTom</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+:root{--blue:#3498db;--blue-dark:#2980b9;--header:#2c3e50;--bg:#f4f6f8}
+body{margin:0;font-family:"Segoe UI",sans-serif;background:var(--bg)}
+header{background:var(--header);color:#fff;padding:15px 20px;font-size:24px;font-weight:600}
+.container{max-width:960px;margin:auto;padding:20px}
+label{font-weight:600;display:block;margin-bottom:6px}
+input,textarea{width:100%;font-family:Consolas,monospace;font-size:14px;padding:10px;margin-bottom:15px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box}
+textarea{resize:vertical}
+button{background:var(--blue);color:#fff;border:none;padding:10px 20px;border-radius:4px;font-weight:600;cursor:pointer;margin-right:8px}
+button:hover{background:var(--blue-dark)}
+#resultPanel{margin-top:20px;background:#fff;border:1px solid #ccc;padding:10px;border-radius:4px;overflow-x:auto}
+.row{display:grid;grid-template-columns:30% 55% 15%;align-items:start;gap:10px;padding:6px 0;border-bottom:1px solid #eee}
+.row:last-child{border-bottom:0}
+.row label{font-weight:700;margin:0}
+.row textarea{border:none;background:#fff;resize:none;height:auto;padding:0}
+.copyBtn{background:#e1e8f0;color:#000;padding:6px 10px;border-radius:4px;border:none;cursor:pointer}
+iframe{width:100%;border:none;border-radius:4px;margin-top:25px}
+</style>
 </head>
 <body>
-  <header>TextExtractor_ByTom</header>
 
-  <div class="container">
-    <label for="labels">Etiquetas a extraer (separadas por comas):</label>
-    <input id="labels" type="text"
-      value="Coaplicante, Número de Seguro Social o ITIN, Fecha de nacimiento, Dirección, Banco, Ruta" />
+<header>TextExtractor_ByTom</header>
 
-    <label for="inputRaw">Texto copiado desde WhatsApp:</label>
-    <textarea id="inputRaw" rows="10"
-      placeholder="Pega aquí el texto copiado desde WhatsApp…"></textarea>
+<div class="container">
 
-    <button id="btnProcess">Procesar</button>
+  <!-- Configuración de etiquetas -->
+  <label for="labels">Etiquetas a extraer (separadas por comas):</label>
+  <input id="labels" type="text"
+    value="Coaplicante, Aplicante, Número de Seguro Social o ITIN, Fecha de nacimiento, Dirección, Banco, Ruta" />
 
-    <div id="resultPanel"></div>
-  </div>
+  <!-- Texto fuente -->
+  <label for="inputRaw">Texto copiado desde WhatsApp:</label>
+  <textarea id="inputRaw" rows="10" placeholder="Pega aquí el texto…"></textarea>
 
-  <script>
-    /* Normaliza saltos de línea de WhatsApp */
-    function normalize(text) {
-      return text
-        .replace(/\r\n/g, "\n")
-        .replace(/\r/g, "\n")
-        .replace(/\u2028|\u2029/g, "\n")
-        .replace(/\n/g, "\r\n");
-    }
+  <!-- Botones -->
+  <button id="btnProcess">Procesar</button>
+  <button id="btnForm" disabled>Abrir formulario</button>
 
-    /* Copia texto al portapapeles */
-    function copy(text) {
-      navigator.clipboard.writeText(text).catch(() => {
-        alert("No se pudo copiar en este navegador.");
-      });
-    }
+  <!-- Resultados -->
+  <div id="resultPanel"></div>
 
-    /* Procesamiento principal */
-    document.getElementById("btnProcess").addEventListener("click", () => {
-      const raw = normalize(document.getElementById("inputRaw").value);
-      const etiquetas = document
-        .getElementById("labels")
-        .value.split(/[,;]/)
-        .map((e) => e.trim())
-        .filter((e) => e !== "");
+  <!-- Iframe del Google Form -->
+  <iframe id="googleForm" height="900" src=""
+          title="Formulario Google (incrustado)">Cargando…</iframe>
 
-      const panel = document.getElementById("resultPanel");
-      panel.innerHTML = ""; // limpia filas previas
+</div>
 
-      etiquetas.forEach((etiqueta) => {
-        const pattern =
-          new RegExp(
-            etiqueta.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") +
-              "\\s*:\\s*(.+?)(?:\\r?\\n|$|\\.)",
-            "i"
-          );
-        const match = raw.match(pattern);
-        const valor = match ? match[1].trim() : "—";
+<script>
+/* ---------- utilidades ---------- */
+function normalize(t){
+  return t.replace(/\r\n/g,"\n").replace(/\r/g,"\n")
+          .replace(/\u2028|\u2029/g,"\n").replace(/\n/g,"\r\n");
+}
+function copy(txt){navigator.clipboard.writeText(txt).catch(()=>alert("No se pudo copiar"));}
 
-        // Crea fila
-        const row = document.createElement("div");
-        row.className = "row";
+/* ---------- mapeo etiqueta → entryID (ID reales de tu Form) ---------- */
+const entryMap={
+  "Coaplicante":                       "entry.2065841175",
+  "Aplicante":                         "entry.2070971853",
+  "Número de Seguro Social o ITIN":    "entry.2375549",
+  "Fecha de nacimiento":               "entry.306242542",
+  "Dirección":                         "entry.1862067",
+  "Banco":                             "entry.1523392839",
+  "Ruta":                              "entry.738771377",
+  // Si añades más preguntas, ponlas aquí
+};
 
-        const lbl = document.createElement("label");
-        lbl.textContent = etiqueta;
+/* ---------- URL base del formulario (embedded + prefill) ---------- */
+const formBase =
+  "https://docs.google.com/forms/d/e/1FAIpQLScm3lwPF0UGpShq2LyM8a5ExRO5wS4qXRmbc_ZKpBC-8f_jDw/viewform?usp=pp_url&embedded=true";
 
-        const txt = document.createElement("textarea");
-        txt.value = valor;
-        txt.readOnly = true;
-        txt.rows = 1;
+/* ---------- UI ---------- */
+const resultPanel=document.getElementById("resultPanel");
+const btnProcess=document.getElementById("btnProcess");
+const btnForm=document.getElementById("btnForm");
+const iframe=document.getElementById("googleForm");
 
-        const btn = document.createElement("button");
-        btn.textContent = "Copiar";
-        btn.className = "copyBtn";
-        btn.addEventListener("click", () => copy(valor));
+let ultimoResultado={}; // se llena tras “Procesar”
 
-        row.append(lbl, txt, btn);
-        panel.appendChild(row);
-      });
-    });
-  </script>
+btnProcess.addEventListener("click",()=>{
+  const raw=normalize(document.getElementById("inputRaw").value);
+  const etiquetas=document.getElementById("labels").value
+                      .split(/[,;]/).map(e=>e.trim()).filter(Boolean);
+
+  resultPanel.innerHTML="";
+  ultimoResultado={};
+
+  etiquetas.forEach(et=>{
+    const regex=new RegExp(et.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\s*:\\s*(.+?)(\\r?\\n|$|\\.)","i");
+    let val=raw.match(regex)?.[1].trim()||"—";
+    if(et.toLowerCase().includes("fecha")) val=formatearFecha(val);
+    ultimoResultado[et]=val;
+    addRow(et,val);
+  });
+
+  btnForm.disabled=false;
+});
+
+function addRow(label,val){
+  const r=document.createElement("div");r.className="row";
+  const l=document.createElement("label");l.textContent=label;
+  const t=document.createElement("textarea");t.value=val;t.readOnly=true;t.rows=1;
+  const b=document.createElement("button");b.textContent="Copiar";b.className="copyBtn";b.onclick=()=>copy(val);
+  r.append(l,t,b);resultPanel.appendChild(r);
+}
+
+btnForm.addEventListener("click",()=>{
+  let url=formBase;
+  for(const [et,val] of Object.entries(ultimoResultado)){
+    const id=entryMap[et];
+    if(id) url+="&"+id+"="+encodeURIComponent(val);
+  }
+  iframe.src=url;
+});
+
+/* ---------- formateo fechas MM/DD/YY ---------- */
+function formatearFecha(str){
+  if(!str) return str;
+  str=str.replace(/\b(\d{1,2})(st|nd|rd|th)\b/i,"$1");
+  const tryF=["MMM d yyyy","MMMM d yyyy","MMM d, yyyy","MMMM d, yyyy"];
+  for(const f of tryF){
+    const d=dayjs(str,f,"en",true);
+    if(d.isValid()) return d.format("MM/DD/YY");
+  }
+  return str;
+}
+</script>
+<!-- Day.js para parsear fechas -->
+<script src="https://unpkg.com/dayjs@1.11.10/dayjs.min.js"></script>
+<script src="https://unpkg.com/dayjs@1.11.10/plugin/customParseFormat.js"></script>
+<script>dayjs.extend(window.dayjs_plugin_customParseFormat);</script>
+
 </body>
 </html>
