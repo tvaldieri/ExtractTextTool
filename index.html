@@ -29,35 +29,40 @@ iframe{width:100%;border:none;border-radius:4px;margin-top:25px}
 
 <div class="container">
 
+  <!-- Etiquetas configurables -->
   <label for="labels">Etiquetas a extraer (separadas por comas):</label>
   <input id="labels" type="text"
-    value="Coaplicante, Aplicante principal, Número de Seguro Social o ITIN, Fecha de nacimiento, Dirección, Banco, Ruta, Correr" />
+    value="Coaplicante, Aplicante Principal, Número de Seguro Social o ITIN, Fecha de nacimiento, Dirección, Banco, Ruta, Correr" />
 
+  <!-- Texto fuente -->
   <label for="inputRaw">Texto copiado desde WhatsApp:</label>
   <textarea id="inputRaw" rows="10" placeholder="Pega aquí el texto…"></textarea>
 
+  <!-- Botones -->
   <button id="btnProcess">Procesar</button>
   <button id="btnForm" disabled>Abrir formulario</button>
 
+  <!-- Resultados -->
   <div id="resultPanel"></div>
 
+  <!-- Formulario incrustado -->
   <iframe id="googleForm" height="900" src=""
           title="Formulario Google (incrustado)">Cargando…</iframe>
 
 </div>
 
 <script>
-/* ---------- utilidades ---------- */
+/* ---------- Utilidades ---------- */
 function normalize(t){
   return t.replace(/\r\n/g,"\n").replace(/\r/g,"\n")
           .replace(/\u2028|\u2029/g,"\n").replace(/\n/g,"\r\n");
 }
 function copy(txt){navigator.clipboard.writeText(txt).catch(()=>alert("No se pudo copiar"));}
 
-/* ---------- mapeo etiqueta → entryID (IDs reales) ---------- */
+/* ---------- Mapeo etiqueta → entryID ---------- */
 const entryMap={
   "Coaplicante":                       "entry.2065841175",
-  "Aplicante principal":               "entry.2070971853",
+  "Aplicante Principal":               "entry.2070971853",
   "Número de Seguro Social o ITIN":    "entry.2375549",
   "Fecha de nacimiento":               "entry.306242542",
   "Dirección":                         "entry.1862067",
@@ -66,25 +71,24 @@ const entryMap={
   "Correr":                            "entry.2075341850"
 };
 
-/* ---------- URL base del formulario (embedded + prefill) ---------- */
-const formBase =
+/* ---------- URL base del formulario ---------- */
+const formBase=
   "https://docs.google.com/forms/d/e/1FAIpQLScm3lwPF0UGpShq2LyM8a5ExRO5wS4qXRmbc_ZKpBC-8f_jDw/viewform?usp=pp_url&embedded=true";
 
-/* ---------- UI ---------- */
-const resultPanel=document.getElementById("resultPanel");
+/* ---------- Elementos UI ---------- */
+const panel=document.getElementById("resultPanel");
 const btnProcess=document.getElementById("btnProcess");
 const btnForm=document.getElementById("btnForm");
 const iframe=document.getElementById("googleForm");
 
-let ultimoResultado={}; // se llena tras “Procesar”
+let ultimoResultado={}; // se llena tras procesar
 
 btnProcess.addEventListener("click",()=>{
   const raw=normalize(document.getElementById("inputRaw").value);
   const etiquetas=document.getElementById("labels").value
                       .split(/[,;]/).map(e=>e.trim()).filter(Boolean);
 
-  resultPanel.innerHTML="";
-  ultimoResultado={};
+  panel.innerHTML=""; ultimoResultado={};
 
   etiquetas.forEach(et=>{
     const regex=new RegExp(et.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\s*:\\s*(.+?)(\\r?\\n|$|\\.)","i");
@@ -102,7 +106,7 @@ function addRow(label,val){
   const l=document.createElement("label");l.textContent=label;
   const t=document.createElement("textarea");t.value=val;t.readOnly=true;t.rows=1;
   const b=document.createElement("button");b.textContent="Copiar";b.className="copyBtn";b.onclick=()=>copy(val);
-  r.append(l,t,b);resultPanel.appendChild(r);
+  r.append(l,t,b);panel.appendChild(r);
 }
 
 btnForm.addEventListener("click",()=>{
@@ -114,19 +118,20 @@ btnForm.addEventListener("click",()=>{
   iframe.src=url;
 });
 
-/* ---------- formateo fechas MM/DD/YY ---------- */
+/* ---------- Formateo fecha MM/DD/YY ---------- */
 function formatearFecha(str){
   if(!str) return str;
-  str=str.replace(/\b(\d{1,2})(st|nd|rd|th)\b/i,"$1");
-  const tryF=["MMM d yyyy","MMMM d yyyy","MMM d, yyyy","MMMM d, yyyy"];
-  for(const f of tryF){
+  str=str.replace(/\b(\d{1,2})(st|nd|rd|th)\b/i,"$1")   // quita sufijos
+         .replace(/[.,]\s*$/,"");                        // quita punto/coma final
+  const formats=["MMM d yyyy","MMMM d yyyy","MMM d, yyyy","MMMM d, yyyy"];
+  for(const f of formats){
     const d=dayjs(str,f,"en",true);
     if(d.isValid()) return d.format("MM/DD/YY");
   }
   return str;
 }
 </script>
-<!-- Day.js para parsear fechas -->
+<!-- Day.js para parse/format fechas -->
 <script src="https://unpkg.com/dayjs@1.11.10/dayjs.min.js"></script>
 <script src="https://unpkg.com/dayjs@1.11.10/plugin/customParseFormat.js"></script>
 <script>dayjs.extend(window.dayjs_plugin_customParseFormat);</script>
